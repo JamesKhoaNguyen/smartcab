@@ -39,6 +39,7 @@ class Simulator(object):
         self.size = size if size is not None else ((self.env.grid_size[0] + 1) * self.env.block_size, (self.env.grid_size[1] + 2) * self.env.block_size)
         self.width, self.height = self.size
         self.road_width = 44
+        self.trial_number_global = 1
 
         self.bg_color = self.colors['gray']
         self.road_color = self.colors['black']
@@ -129,7 +130,7 @@ class Simulator(object):
 
             # Flip testing switch
             if not testing:
-                if total_trials > 100: # Must complete minimum 20 training trials
+                if total_trials > 20: # Must complete minimum 20 training trials
                     if a.learning:
                         if a.epsilon < tolerance: # assumes epsilon decays to 0
                             testing = True
@@ -183,7 +184,7 @@ class Simulator(object):
                         self.last_updated = self.current_time
 
                     # Render text
-                    self.render_text(trial, testing)
+                    self.render_text(self.trial_number_global, testing)
 
                     # Render GUI and sleep
                     if self.display:
@@ -223,6 +224,8 @@ class Simulator(object):
             # Increment
             total_trials = total_trials + 1
             trial = trial + 1
+            self.trial_number_global = trial
+
 
         # Clean up
         if self.log_metrics:
