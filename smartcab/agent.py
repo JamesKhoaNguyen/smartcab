@@ -13,13 +13,14 @@ class LearningAgent(Agent):
         super(LearningAgent, self).__init__(env)     # Set the agent in the evironment
         self.planner = RoutePlanner(self.env, self)  # Create a route planner
         self.valid_actions = self.env.valid_actions  # The set of valid actions
-        self.trial_number_global = 0
+        self.trial_number_global = 0 #keeps track of the number of trials so far
         # Set parameters of the learning agent
         self.learning = learning # Whether the agent is expected to learn
         self.Q = dict()          # Create a Q-table which will be a dictionary of tuples
         self.epsilon = epsilon   # Random exploration factor
         self.alpha = alpha       # Learning factor
-
+        self.testing = None      # Trial/Test Period Tracker (added by James Nguyen)
+        self.q_values = []       # q-values list which contains actions:reward pairs for a specific state (added by James Nguyen)
         ###########
         ## TO DO ##
         ###########
@@ -47,6 +48,13 @@ class LearningAgent(Agent):
             #self.epsilon = self.epsilon - 0.05
             self.epsilon = math.pow(a, self.trial_number_global)
 
+        if testing == True:
+            self.epsilon = 0
+            self.alpha = 0
+            self.testing == True
+        else:
+            self.testing == False
+
         return None
 
     def build_state(self):
@@ -71,13 +79,25 @@ class LearningAgent(Agent):
     def get_maxQ(self, state):
         """ The get_max_Q function is called when the agent is asked to find the
             maximum Q-value of all actions based on the 'state' the smartcab is in. """
-
         ###########
         ## TO DO ##
         ###########
         # Calculate the maximum Q-value of all actions for a given state
+        """Step 1 is to create a tuple that has all of the potential actions for
+           a given state. You can do this by iterating through all the potential
+           actions within a state.
 
-        maxQ = None
+           Step 2 is to simply take the max Q-Value from all the actions within
+           the tuple."""
+        self.q_values = [self.Q[state][action] for action in self.valid_actions]
+        temp_max_indices = max(q_values)
+        """ For the case of multiple max Q-values"""
+        if len(temp_max_list) > 1:
+            maxQ = random.choice(temp_max_list)
+        else:
+            maxQ = max(temp_max_indices)
+
+        """need to verify the syntax and functionality of the lines above"""
 
         return maxQ
 
@@ -91,6 +111,13 @@ class LearningAgent(Agent):
         # When learning, check if the 'state' is not in the Q-table
         # If it is not, create a new dictionary for that state
         #   Then, for each action available, set the initial Q-value to 0.0
+        action_reward_dict = {}
+        if self.learning == True:
+            if state not in self.Q:
+                for action in self.valid_actions:
+                    action_reward_dict[action] = 0.0
+        self.Q[state] = action_reward_dict
+
 
         return
 
@@ -102,15 +129,24 @@ class LearningAgent(Agent):
         # Set the agent state and default action
         self.state = state
         self.next_waypoint = self.planner.next_waypoint()
-        action = random.choice(Environment.valid_actions)
+        """ Default Question 3 Situation """
+        if self.learning == False:
+            action = random.choice(Environment.valid_actions)
 
         ###########
         ## TO DO ##
         ###########
-        # When not learning, choose a random action
-        # When learning, choose a random action with 'epsilon' probability
-        #   Otherwise, choose an action with the highest Q-value for the current state
-
+        # When not learning, choose a random action (problem 3 default no learning)
+        # When learning, choose a random action with 'epsilon' probability (Trial period for q-learning)
+        # Otherwise, choose an action with the highest Q-value for the current state (testing period for q-learning)
+        if self.learning == False:
+            action = random.choice(Environment.valid_actions)
+        if self.learning == True:
+            if random.random() < self.epsilon:
+                action = random.choice(Environment.valid_actions)
+            else:
+                maxQ = get_maxQ(state)
+                action = self.valid_actions[self.q_values.index(maxQ)]
         return action
 
 
@@ -124,6 +160,14 @@ class LearningAgent(Agent):
         ###########
         # When learning, implement the value iteration update rule
         #   Use only the learning rate 'alpha' (do not use the discount factor 'gamma')
+        """ Note to James: Remember that not considering future rewards is the
+            same thing as setting gamma = 0.
+            The value iteration formula for Q-Learning is as follows:
+            Q(s,a) += alpha * (r + gamma * max,Q(s') - Q(s,a))
+            Q(s,a) => self.q [state][action]
+            gamma = 0.0 since we don't consider future rewards"""
+        self.q[state][action] += self.alpha * (reward - self.q[state][action])
+
 
         return
 
