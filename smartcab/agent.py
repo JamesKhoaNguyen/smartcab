@@ -16,7 +16,7 @@ class LearningAgent(Agent):
         self.trial_number_global = 0 #keeps track of the number of trials so far
         # Set parameters of the learning agent
         self.learning = learning # Whether the agent is expected to learn
-        self.Q = dict()          # Create a Q-table which will be a dictionary of tuples
+        self.Q = dict()          # Create a Q-table which will be a dictionary of s
         self.epsilon = epsilon   # Random exploration factor
         self.alpha = alpha       # Learning factor
         self.testing = None      # Trial/Test Period Tracker (added by James Nguyen)
@@ -43,8 +43,9 @@ class LearningAgent(Agent):
         # Update epsilon using a decay function of your choice
         # Update additional class parameters as needed
         # If 'testing' is True, set epsilon and alpha to 0
-        a = 0.82
-        if self.epsilon > 0.02:
+        a = 0.99
+
+        if self.epsilon > 0.01 and testing == False:
             #self.epsilon = self.epsilon - 0.05
             self.epsilon = math.pow(a, self.trial_number_global)
 
@@ -65,13 +66,15 @@ class LearningAgent(Agent):
         # Collect data about the environment
         waypoint = self.planner.next_waypoint() # The next waypoint
         inputs = self.env.sense(self)           # Visual input - intersection light and traffic
+        inputs = tuple([(v,k) for v,k in inputs.iteritems()])
         deadline = self.env.get_deadline(self)  # Remaining deadline
+        #deadline = tuple([(v,k) for v,k in deadline.iteritems()])
 
         ###########
         ## TO DO ##
         ###########
-        # Set 'state' as a tuple of relevant data for the agent
-        state = [waypoint,inputs,deadline]
+        # Set 'state' as a  of relevant data for the agent
+        state = tuple([waypoint,inputs])
 
         return state
 
@@ -83,21 +86,15 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Calculate the maximum Q-value of all actions for a given state
-        """Step 1 is to create a tuple that has all of the potential actions for
+        """Step 1 is to create a  that has all of the potential actions for
            a given state. You can do this by iterating through all the potential
            actions within a state.
 
            Step 2 is to simply take the max Q-Value from all the actions within
-           the tuple."""
+           the ."""
         self.q_values = [self.Q[state][action] for action in self.valid_actions]
-        temp_max_indices = max(q_values)
+        maxQ = max(self.q_values)
         """ For the case of multiple max Q-values"""
-        if len(temp_max_list) > 1:
-            maxQ = random.choice(temp_max_list)
-        else:
-            maxQ = max(temp_max_indices)
-
-        """need to verify the syntax and functionality of the lines above"""
 
         return maxQ
 
@@ -116,8 +113,7 @@ class LearningAgent(Agent):
             if state not in self.Q:
                 for action in self.valid_actions:
                     action_reward_dict[action] = 0.0
-        self.Q[state] = action_reward_dict
-
+                self.Q[state] = action_reward_dict
 
         return
 
@@ -140,13 +136,23 @@ class LearningAgent(Agent):
         # When learning, choose a random action with 'epsilon' probability (Trial period for q-learning)
         # Otherwise, choose an action with the highest Q-value for the current state (testing period for q-learning)
         if self.learning == False:
+            """ Q-learning turned off """
             action = random.choice(Environment.valid_actions)
         if self.learning == True:
+            """ Q-learning turned on """
             if random.random() < self.epsilon:
+                #random actions of epsilon probability can happen only in training trials
                 action = random.choice(Environment.valid_actions)
             else:
-                maxQ = get_maxQ(state)
-                action = self.valid_actions[self.q_values.index(maxQ)]
+                #non-random actions based on Q-value can happen in both training and testing trials
+                maxQ = self.get_maxQ(state)
+                if self.q_values.count(maxQ) > 1:
+                    """This is to randomize the action in the case of multiple actions with the same Q-values"""
+                    maxQ_index = random.choice([i for i in range(len(self.q_values)) if self.q_values[i] == maxQ])
+                    action = self.valid_actions[maxQ_index]
+                else:
+                    action = self.valid_actions[self.q_values.index(maxQ)]
+
         return action
 
 
@@ -166,7 +172,16 @@ class LearningAgent(Agent):
             Q(s,a) += alpha * (r + gamma * max,Q(s') - Q(s,a))
             Q(s,a) => self.q [state][action]
             gamma = 0.0 since we don't consider future rewards"""
-        self.q[state][action] += self.alpha * (reward - self.q[state][action])
+        print "cow_dung"
+        print "state is"
+        print state
+        print "action is"
+        print action
+        print "Q(s,a) before is"
+        print self.Q[state][action]
+        self.Q[state][action] += self.alpha * (reward - self.Q[state][action])
+        print "Q(s,a) after is "
+        print self.Q[state][action]
 
 
         return
