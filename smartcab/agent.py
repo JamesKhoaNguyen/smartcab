@@ -9,7 +9,7 @@ class LearningAgent(Agent):
     """ An agent that learns to drive in the Smartcab world.
         This is the object you will be modifying. """
 
-    def __init__(self, env, learning=True, epsilon=1.0, alpha=0.5):
+    def __init__(self, env, learning=False, epsilon=1.0, alpha=0.5):
         super(LearningAgent, self).__init__(env)     # Set the agent in the evironment
         self.planner = RoutePlanner(self.env, self)  # Create a route planner
         self.valid_actions = self.env.valid_actions  # The set of valid actions
@@ -43,11 +43,11 @@ class LearningAgent(Agent):
         # Update epsilon using a decay function of your choice
         # Update additional class parameters as needed
         # If 'testing' is True, set epsilon and alpha to 0
-        a = 0.99
-
-        if self.epsilon > 0.01 and testing == False:
+        if testing == False:
+            """Non-optimized learning case"""
             #self.epsilon = self.epsilon - 0.05
-            self.epsilon = math.pow(a, self.trial_number_global)
+            """Optimized learning case"""
+            self.epsilon = math.pow(0.999, self.trial_number_global)
 
         if testing == True:
             self.epsilon = 0
@@ -55,6 +55,7 @@ class LearningAgent(Agent):
             self.testing == True
         else:
             self.testing == False
+        """ ------------ epsilon code portion ----------"""
 
         return None
 
@@ -68,7 +69,6 @@ class LearningAgent(Agent):
         inputs = self.env.sense(self)           # Visual input - intersection light and traffic
         inputs = tuple([(v,k) for v,k in inputs.iteritems()])
         deadline = self.env.get_deadline(self)  # Remaining deadline
-        #deadline = tuple([(v,k) for v,k in deadline.iteritems()])
 
         ###########
         ## TO DO ##
@@ -86,15 +86,9 @@ class LearningAgent(Agent):
         ## TO DO ##
         ###########
         # Calculate the maximum Q-value of all actions for a given state
-        """Step 1 is to create a  that has all of the potential actions for
-           a given state. You can do this by iterating through all the potential
-           actions within a state.
 
-           Step 2 is to simply take the max Q-Value from all the actions within
-           the ."""
         self.q_values = [self.Q[state][action] for action in self.valid_actions]
         maxQ = max(self.q_values)
-        """ For the case of multiple max Q-values"""
 
         return maxQ
 
@@ -125,9 +119,6 @@ class LearningAgent(Agent):
         # Set the agent state and default action
         self.state = state
         self.next_waypoint = self.planner.next_waypoint()
-        """ Default Question 3 Situation """
-        if self.learning == False:
-            action = random.choice(Environment.valid_actions)
 
         ###########
         ## TO DO ##
@@ -135,11 +126,11 @@ class LearningAgent(Agent):
         # When not learning, choose a random action (problem 3 default no learning)
         # When learning, choose a random action with 'epsilon' probability (Trial period for q-learning)
         # Otherwise, choose an action with the highest Q-value for the current state (testing period for q-learning)
+        """ Q-learning turned off """
         if self.learning == False:
-            """ Q-learning turned off """
             action = random.choice(Environment.valid_actions)
+        """ Q-learning turned on """
         if self.learning == True:
-            """ Q-learning turned on """
             if random.random() < self.epsilon:
                 #random actions of epsilon probability can happen only in training trials
                 action = random.choice(Environment.valid_actions)
@@ -147,7 +138,7 @@ class LearningAgent(Agent):
                 #non-random actions based on Q-value can happen in both training and testing trials
                 maxQ = self.get_maxQ(state)
                 if self.q_values.count(maxQ) > 1:
-                    """This is to randomize the action in the case of multiple actions with the same Q-values"""
+                    #This is to randomize the action in the case of multiple actions with the same Q-values
                     maxQ_index = random.choice([i for i in range(len(self.q_values)) if self.q_values[i] == maxQ])
                     action = self.valid_actions[maxQ_index]
                 else:
@@ -172,17 +163,8 @@ class LearningAgent(Agent):
             Q(s,a) += alpha * (r + gamma * max,Q(s') - Q(s,a))
             Q(s,a) => self.q [state][action]
             gamma = 0.0 since we don't consider future rewards"""
-        print "cow_dung"
-        print "state is"
-        print state
-        print "action is"
-        print action
-        print "Q(s,a) before is"
-        print self.Q[state][action]
-        self.Q[state][action] += self.alpha * (reward - self.Q[state][action])
-        print "Q(s,a) after is "
-        print self.Q[state][action]
-
+        if self.learning == True:
+            self.Q[state][action] += self.alpha * (reward - self.Q[state][action])
 
         return
 
@@ -219,7 +201,12 @@ def run():
     #   learning   - set to True to force the driving agent to use Q-learning
     #    * epsilon - continuous value for the exploration factor, default is 1
     #    * alpha   - continuous value for the learning rate, default is 0.5
-    agent = env.create_agent(LearningAgent,learning= True, alpha = 0.99, epsilon = 0.90)
+    """no learning case"""
+    #agent = env.create_agent(LearningAgent)
+    """non-optimized learning case"""
+    #agent = env.create_agent(LearningAgent,learning= True, alpha = 0.99, epsilon = 0.90)
+    """optimized learning case, no need to set epsilon in the optimized learning case since it's dependent on the 'a' constant (refer to formula)"""
+    agent = env.create_agent(LearningAgent,learning= True, alpha = 0.1)
 
     ##############
     # Follow the driving agent
@@ -234,6 +221,9 @@ def run():
     #   display      - set to False to disable the GUI if PyGame is enabled
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
+    """non-learning & non-optimized learning case"""
+    #sim = Simulator(env, update_delay = 0.01, log_metrics = True)
+    """optimized learning case"""
     sim = Simulator(env, update_delay = 0.01, log_metrics = True, optimized = True)
 
     ##############
@@ -241,7 +231,10 @@ def run():
     # Flags:
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05
     #   n_test     - discrete number of testing trials to perform, default is 0
-    sim.run(n_test = 10, tolerance = 0.02)
+    """no learning & non-optimized learning case """
+    #sim.run(n_test = 10)
+    """optimized learning case"""
+    sim.run(n_test = 10, tolerance = 0.01)
 
 
 if __name__ == '__main__':
