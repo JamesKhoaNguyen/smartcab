@@ -45,9 +45,9 @@ class LearningAgent(Agent):
         # If 'testing' is True, set epsilon and alpha to 0
         if testing == False:
             """Non-optimized learning case"""
-            #self.epsilon = self.epsilon - 0.05
+            self.epsilon = self.epsilon - 0.05
             """Optimized learning case"""
-            self.epsilon = math.pow(0.999, self.trial_number_global)
+            #self.epsilon = math.pow(0.999, self.trial_number_global)
 
         if testing == True:
             self.epsilon = 0
@@ -204,9 +204,9 @@ def run():
     """no learning case"""
     #agent = env.create_agent(LearningAgent)
     """non-optimized learning case"""
-    #agent = env.create_agent(LearningAgent,learning= True, alpha = 0.99, epsilon = 0.90)
+    agent = env.create_agent(LearningAgent,learning= True, alpha = 0.1, epsilon = 1)
     """optimized learning case, no need to set epsilon in the optimized learning case since it's dependent on the 'a' constant (refer to formula)"""
-    agent = env.create_agent(LearningAgent,learning= True, alpha = 0.1)
+    #agent = env.create_agent(LearningAgent,learning= True, alpha = 0.1)
 
     ##############
     # Follow the driving agent
@@ -222,9 +222,9 @@ def run():
     #   log_metrics  - set to True to log trial and simulation results to /logs
     #   optimized    - set to True to change the default log file name
     """non-learning & non-optimized learning case"""
-    #sim = Simulator(env, update_delay = 0.01, log_metrics = True)
+    sim = Simulator(env, update_delay = 0.01, log_metrics = True)
     """optimized learning case"""
-    sim = Simulator(env, update_delay = 0.01, log_metrics = True, optimized = True)
+    #sim = Simulator(env, update_delay = 0.01, log_metrics = True, optimized = True)
 
     ##############
     # Run the simulator
@@ -232,9 +232,9 @@ def run():
     #   tolerance  - epsilon tolerance before beginning testing, default is 0.05
     #   n_test     - discrete number of testing trials to perform, default is 0
     """no learning & non-optimized learning case """
-    #sim.run(n_test = 10)
+    sim.run(n_test = 10)
     """optimized learning case"""
-    sim.run(n_test = 10, tolerance = 0.01)
+    #sim.run(n_test = 10, tolerance = 0.01)
 
 
 if __name__ == '__main__':
